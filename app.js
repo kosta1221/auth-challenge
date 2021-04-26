@@ -1,4 +1,4 @@
-/* write your server code here */
+require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 const jwt = require("jsonwebtoken");
@@ -22,7 +22,7 @@ app.use(morgan(":method :url :status :res[content-length] - :response-time ms :r
 
 const users = [];
 
-app.get("/users", (req, res, next) => {
+app.get("/users", authorization, (req, res, next) => {
 	res.json(users);
 });
 
@@ -47,7 +47,9 @@ app.post("/users/login", async (req, res, next) => {
 	}
 	try {
 		if (await bcrypt.compare(req.body.password, user.password)) {
-			res.send("success");
+			const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+
+			res.json({ accessToken: accessToken });
 		} else {
 			res.status(401).send("not allowed");
 		}
@@ -55,6 +57,20 @@ app.post("/users/login", async (req, res, next) => {
 		res.status(500).send();
 	}
 });
+
+function authorization(req, res, next) {
+	const authHeader = req.headers["authorization"];
+	const token = authHeader && authHeader.split(" ")[1];
+
+	if (token == null) return res.sendStatus(401);
+
+	jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+		if (err) return res.sendStatus(403);
+
+		req.user = user;
+		next();
+	});
+}
 
 const errorHandler = (error, req, res, next) => {
 	console.error(error);
