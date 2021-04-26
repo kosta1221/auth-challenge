@@ -22,10 +22,15 @@ app.use(morgan(":method :url :status :res[content-length] - :response-time ms :r
 
 // normally store those in db
 const users = [];
-const refreshTokens = [];
+let refreshTokens = [];
 
 app.get("/users", authorization, (req, res, next) => {
 	res.json(users);
+});
+
+app.delete("/logout", (req, res) => {
+	refreshTokens = refreshTokens.filter((token) => token !== req.body.token);
+	res.sendStatus(204);
 });
 
 app.post("/token", (req, res, next) => {
@@ -38,7 +43,6 @@ app.post("/token", (req, res, next) => {
 
 	jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
 		if (err) {
-			console.log("hii");
 			return res.sendStatus(403);
 		}
 
