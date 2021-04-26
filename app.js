@@ -20,10 +20,31 @@ morgan.token("reqbody", (req) => {
 app.use(express.json());
 app.use(morgan(":method :url :status :res[content-length] - :response-time ms :reqbody"));
 
+// normally store those in db
 const users = [];
+const refreshTokens = [];
 
 app.get("/users", authorization, (req, res, next) => {
 	res.json(users);
+});
+
+app.post("/token", (req, res, next) => {
+	const refreshToken = req.body.token;
+	console.log(refreshTokens);
+	console.log("token:", refreshToken);
+
+	if (refreshTokens == null) return res.sendStatus(401);
+	if (!refreshTokens.includes(refreshToken)) return res.sendStatus(403);
+
+	jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+		if (err) {
+			console.log("hii");
+			return res.sendStatus(403);
+		}
+
+		const accessToken = generateAccessToken({ name: user.name });
+		res.json({ accessToken: accessToken });
+	});
 });
 
 app.post("/users/register", async (req, res, next) => {
@@ -47,9 +68,12 @@ app.post("/users/login", async (req, res, next) => {
 	}
 	try {
 		if (await bcrypt.compare(req.body.password, user.password)) {
-			const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+			const accessToken = generateAccessToken(user);
 
-			res.json({ accessToken: accessToken });
+			const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
+			refreshTokens.push(refreshToken);
+
+			res.json({ accessToken: accessToken, refreshToken: refreshToken });
 		} else {
 			res.status(401).send("not allowed");
 		}
@@ -70,6 +94,10 @@ function authorization(req, res, next) {
 		req.user = user;
 		next();
 	});
+}
+
+function generateAccessToken(user) {
+	return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15s" });
 }
 
 const errorHandler = (error, req, res, next) => {
