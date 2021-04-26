@@ -41,10 +41,18 @@ app.post("/users/register", async (req, res, next) => {
 });
 
 app.post("/users/login", async (req, res, next) => {
-	console.log(req.body);
-	const user = users.find((user) => (user.name = req.body.name));
+	const user = users.find((user) => user.name === req.body.name);
 	if (user == null) {
 		return res.status(400).send("Cannot find user");
+	}
+	try {
+		if (await bcrypt.compare(req.body.password, user.password)) {
+			res.send("success");
+		} else {
+			res.status(401).send("not allowed");
+		}
+	} catch (error) {
+		res.status(500).send();
 	}
 });
 
