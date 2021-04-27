@@ -7,15 +7,14 @@ const originalPackageJSON = {
 		start: "node start.js",
 	},
 	dependencies: {
-		bcrypt: "^5.0.1",
-		dotenv: "^8.2.0",
+		bcrypt: "^5.0.0",
 		express: "^4.17.1",
 		jsonwebtoken: "^8.5.1",
 		morgan: "^1.10.0",
-		nodemon: "^2.0.7",
+		nodemon: "^2.0.4",
 	},
 	devDependencies: {
-		jest: "^26.6.3",
+		jest: "^26.4.2",
 		supertest: "^4.0.2",
 	},
 };
